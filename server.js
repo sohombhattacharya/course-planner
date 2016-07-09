@@ -46,6 +46,10 @@ app.post('/api/login', (req, res) => {
     db.collection('accounts').findOne({"username": "eee"}).then(function(doc){
         if (doc){
             res.send("account exists"); 
+            pwd = req.body.password;          
+            var hash = doc.password;
+            bcrypt.compareSync(pwd, hash);
+
         }
         else
             return res.send("account doesn't exist!"); 
@@ -64,9 +68,6 @@ app.post('/api/login', (req, res) => {
 //    });
     pwd = req.body.password;  
     var hash = bcrypt.hashSync(pwd, 10);
-    
-    
-    
     
     bcrypt.compareSync("not_bacon", hash);
     res.send(hash);
