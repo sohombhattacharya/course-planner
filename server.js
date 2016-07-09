@@ -48,7 +48,7 @@ app.post('/api/login', (req, res) => {
             res.send("account exists"); 
             pwd = req.body.password;          
             var hash = doc.password;
-            bcrypt.compareSync(pwd, hash);
+            var bool = bcrypt.compareSync(pwd, hash);
 
         }
         else
