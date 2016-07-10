@@ -4,11 +4,27 @@ var port = process.env.PORT || 3000;
 var bodyParser = require('body-parser');
 var path = require("path");
 var bcrypt = require('bcryptjs');
+var session = require('express-session');
 const MongoClient = require('mongodb').MongoClient
 const mongoURL = 'mongodb://svb5582:test123@ds017165.mlab.com:17165/course-planner'; // NEED TO USE HEROKU CONFIG VARIABLES HERE!!!
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(session({
+    secret: '2C44-4D55-WppQ38S', // HEROKU CONFIG VARIABLE 
+    resave: true,
+    saveUninitialized: true,
+    duration: 30 * 60 * 1000,
+    activeDuration: 5 * 60 * 1000,
+    httpOnly: true,
+    secure: true,
+    ephemeral: true
+}));
+var auth = function(req, res, next) {
+    if (req.session && req.session.admin)
+        return next();
+    else
+        return res.sendStatus(401);
+}; 
 MongoClient.connect(mongoURL, (err, database) => {
     if (err) return console.log(err);
     db = database;
@@ -17,26 +33,34 @@ MongoClient.connect(mongoURL, (err, database) => {
     });
 });
 
-
 app.post('/api/createAccount', (req, res) => {
     user = req.body.username; 
-    db.collection('accounts').find({"username":user}).count().then(function(count) {
+    var obj = {"username": user};
+    db.collection('accounts').find(obj).count().then(function(count) {
         if (count == 0){
             pwd = req.body.password;  
             nickname = req.body.nickname; 
-            var hash = bcrypt.hashSync(pwd, 10);
+            var hash = bcrypt.hashSync(pwd, 10); // 10 NEEDS TO BE HEROKU CONFIG VARIABLE
             var account = {"username": user, "password": hash, "nickname": nickname};
             db.collection('accounts').insert(account, (err, results) => {
-                if (err) return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR 
-                return res.send("account added");  
+                if (err){ 
+                    return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR
+                }
+//                console.log(results["ops"][0]["_id"]);
+                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname}; 
+                req.session.admin = true; 
+                //req.session.userCourses
+
+                return res.redirect('/home');
+//                res.sendFile(path.join(__dirname+'/views/homepage.html'));
             });      
         }
         else if (count > 0){
-            return res.send("username already exists"); 
+            res.send("username already exists"); 
         //SET SESSION RETURN VALUE TO --> USERNAME ALREADY EXISTS PLEASE ENTER NEW
         }
         else
-            return res.send("unknown error"); 
+            res.send("unknown error"); 
 //        callback(count);
     });
 });
@@ -45,7 +69,6 @@ app.post('/api/login', (req, res) => {
     user = req.body.username; 
     db.collection('accounts').findOne({"username": user}).then(function(doc){
         if (doc){
-            res.send("account exists"); 
             pwd = req.body.password;          
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
@@ -55,7 +78,7 @@ app.post('/api/login', (req, res) => {
                 res.send("incorrect username/password"); 
         }
         else
-            return res.send("account doesn't exist!"); 
+            res.send("account doesn't exist!"); 
     
     });
 //    db.collection('accounts').find({"username":user}).then(function(cursor) {
@@ -69,13 +92,6 @@ app.post('/api/login', (req, res) => {
 //        else
 //            return res.send("unknown error"); 
 //    });
-    pwd = req.body.password;  
-    var hash = bcrypt.hashSync(pwd, 10);
-    
-    bcrypt.compareSync("not_bacon", hash);
-    res.send(hash);
-    
-
 });
 
 //app.post('/api/saveDB', (req, res) => {
@@ -94,6 +110,10 @@ app.post('/api/login', (req, res) => {
 app.get('/',function(req,res){
   res.sendFile(path.join(__dirname+'/views/index.html'));
   //__dirname : It will resolve to your project folder.
+});
+
+app.get('/home', auth, function(req, res){
+    res.json(req.session); 
 });
 
 //app.get('/testGet', function (req, res) {
