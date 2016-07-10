@@ -5,7 +5,9 @@ var bodyParser = require('body-parser');
 var path = require("path");
 var bcrypt = require('bcryptjs');
 var session = require('express-session');
-const MongoClient = require('mongodb').MongoClient
+var mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
+var ObjectID = mongodb.ObjectID;
 const mongoURL = 'mongodb://svb5582:test123@ds017165.mlab.com:17165/course-planner'; // HEROKU CONFIG VARIABLE FOR USER/PASS
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,22 +21,20 @@ app.use(session({
     secure: true,
     ephemeral: true
 }));
+
+/*
+***************************************************************
+NEED TO MAKE BETTER AUTH******
+***************************************************************
+*/
 var auth = function(req, res, next) {
-//    var userID = null; 
-    
-//    db.collection('accounts').findOne({"username": req.session.userInfo["username"]}).then(function(doc){
-//        if (doc){
-//            userID = doc._id; 
-//        }
-//    });    
-    
     if (req.session && req.session.admin)
         return next();
     else
         return res.sendStatus(401);
 }; 
 MongoClient.connect(mongoURL, (err, database) => {
-    if (err) return console.log(err);
+    if (err) return res.send("database cannot be connected to");
     db = database;
     app.listen(port, () => {
         console.log('listening on 3000');
@@ -49,13 +49,13 @@ app.post('/api/createAccount', (req, res) => {
             pwd = req.body.password;  
             nickname = req.body.nickname; 
             var hash = bcrypt.hashSync(pwd, 10); // 10 NEEDS TO BE HEROKU CONFIG VARIABLE
-            var account = {"username": user, "password": hash, "nickname": nickname};
+            var account = {"username": user, "password": hash, "nickname": nickname, "courses": []};
             db.collection('accounts').insert(account, (err, results) => {
                 if (err){ 
                     return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR
                 }
 //                console.log(results["ops"][0]["_id"]);
-                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname}; 
+                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname, "courses": []}; 
                 req.session.admin = true; 
                 //req.session.userCourses
 
@@ -72,15 +72,20 @@ app.post('/api/createAccount', (req, res) => {
 //        callback(count);
     });
 });
+app.post('/api/addCourse', auth, (req, res) => {
+    courseName = req.body.courseName; 
+    courseDescription = req.body.courseDescription; 
+    var query = {"_id": ObjectID(req.session.userInfo.userID)}
+    var courseData = {"$addToSet": {"courses": {"courseName": courseName, "description": courseDescription, "tasks": []}}};
+    var instr = {"returnOriginal": false};
+    console.log(courseName);
+    console.log(req.session.userInfo.userID);
+    db.collection('accounts').findOneAndUpdate(query, courseData, instr).then(function(doc){
+        req.session.userInfo.courses = doc.value.courses;  
+        res.redirect('/home');
+    });
+});
 
-
-/*
-***********************************************************
-
-NEED TO ADD SESSION SUPPORT FOR THIS LOGIN GET CALL, AND CHANGE SENDFILE TO REDIRECT TO '/HOME'
-
-***********************************************************
-*/
 app.post('/api/login', (req, res) => {
     user = req.body.username; 
     db.collection('accounts').findOne({"username": user}).then(function(doc){
@@ -89,15 +94,15 @@ app.post('/api/login', (req, res) => {
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
             if (correctPwd){
-                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname}; 
+                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname, "courses": doc.courses}; 
                 req.session.admin = true; 
                 return res.redirect('/home');
             }
             else
-                res.send("incorrect username/password"); 
+                return res.send("incorrect username/password"); 
         }
         else
-            res.send("account doesn't exist!"); 
+            return res.send("account doesn't exist!"); 
     
     });
 //    db.collection('accounts').find({"username":user}).then(function(cursor) {
@@ -137,7 +142,7 @@ app.get('/home', auth, function(req, res){
 
 app.get('/logout', function (req, res) {
   req.session.destroy();
-  res.send("logged out");
+  res.redirect('/');
 });
 
 //app.get('/testGet', function (req, res) {
