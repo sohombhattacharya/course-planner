@@ -65,6 +65,14 @@ app.post('/api/createAccount', (req, res) => {
     });
 });
 
+
+/*
+***********************************************************
+
+NEED TO ADD SESSION SUPPORT FOR THIS LOGIN GET CALL, AND CHANGE SENDFILE TO REDIRECT TO '/HOME'
+
+***********************************************************
+*/
 app.post('/api/login', (req, res) => {
     user = req.body.username; 
     db.collection('accounts').findOne({"username": user}).then(function(doc){
