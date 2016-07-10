@@ -6,7 +6,7 @@ var path = require("path");
 var bcrypt = require('bcryptjs');
 var session = require('express-session');
 const MongoClient = require('mongodb').MongoClient
-const mongoURL = 'mongodb://svb5582:test123@ds017165.mlab.com:17165/course-planner'; // NEED TO USE HEROKU CONFIG VARIABLES HERE!!!
+const mongoURL = 'mongodb://svb5582:test123@ds017165.mlab.com:17165/course-planner'; // HEROKU CONFIG VARIABLE FOR USER/PASS
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
@@ -20,6 +20,14 @@ app.use(session({
     ephemeral: true
 }));
 var auth = function(req, res, next) {
+//    var userID = null; 
+    
+//    db.collection('accounts').findOne({"username": req.session.userInfo["username"]}).then(function(doc){
+//        if (doc){
+//            userID = doc._id; 
+//        }
+//    });    
+    
     if (req.session && req.session.admin)
         return next();
     else
@@ -80,8 +88,11 @@ app.post('/api/login', (req, res) => {
             pwd = req.body.password;          
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
-            if (correctPwd)
-                res.sendFile(path.join(__dirname+'/views/homepage.html'));
+            if (correctPwd){
+                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname}; 
+                req.session.admin = true; 
+                return res.redirect('/home');
+            }
             else
                 res.send("incorrect username/password"); 
         }
@@ -122,6 +133,11 @@ app.get('/',function(req,res){
 
 app.get('/home', auth, function(req, res){
     res.json(req.session); 
+});
+
+app.get('/logout', function (req, res) {
+  req.session.destroy();
+  res.send("logged out");
 });
 
 //app.get('/testGet', function (req, res) {
