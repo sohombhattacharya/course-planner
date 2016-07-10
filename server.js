@@ -43,13 +43,16 @@ app.post('/api/createAccount', (req, res) => {
 
 app.post('/api/login', (req, res) => {
     user = req.body.username; 
-    db.collection('accounts').findOne({"username": "eee"}).then(function(doc){
+    db.collection('accounts').findOne({"username": user}).then(function(doc){
         if (doc){
             res.send("account exists"); 
             pwd = req.body.password;          
             var hash = doc.password;
-            var bool = bcrypt.compareSync(pwd, hash);
-
+            var correctPwd = bcrypt.compareSync(pwd, hash);
+            if (correctPwd)
+                res.sendFile(path.join(__dirname+'/views/homepage.html'));
+            else
+                res.send("incorrect username/password"); 
         }
         else
             return res.send("account doesn't exist!"); 
