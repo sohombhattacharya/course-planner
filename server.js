@@ -49,12 +49,12 @@ app.post('/api/createAccount', (req, res) => {
             pwd = req.body.password;  
             nickname = req.body.nickname; 
             var hash = bcrypt.hashSync(pwd, 10); // 10 NEEDS TO BE HEROKU CONFIG VARIABLE
-            var account = {"username": user, "password": hash, "nickname": nickname, "courses": []};
+            var account = {"username": user, "password": hash, "nickname": nickname};
             db.collection('accounts').insert(account, (err, results) => {
                 if (err){ 
                     return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR
                 }
-                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname, "courses": []}; 
+                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname}; 
                 req.session.admin = true; 
                 return res.redirect('/home');
             });      
@@ -118,7 +118,7 @@ app.post('/api/updateTask', auth, (req, res) => {
     oldTaskName = req.body.oldTaskName; 
     newTaskName = req.body.newTaskName; 
     newTaskDescription = req.body.newTaskDescription; 
-    var query = {"_id": ObjectID(req.session.userInfo.userID), "courses": {"$elemMatch": {"courses.courseName": courseName, "courses.tasks.task": oldTaskName}}};
+    var query = 
     var existsQuery = {
     "_id": ObjectID(req.session.userInfo.userID),    
     "courses": { 
@@ -191,7 +191,8 @@ app.post('/api/login', (req, res) => {
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
             if (correctPwd){
-                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname, "courses": doc.courses}; 
+                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname};
+                
                 req.session.admin = true; 
                 return res.redirect('/home');
             }
