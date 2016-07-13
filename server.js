@@ -54,7 +54,18 @@ app.post('/api/createAccount', (req, res) => {
                 if (err){ 
                     return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR
                 }
-                req.session.userInfo = {"userID": results["ops"][0]["_id"], "username": user, "nickname": nickname}; 
+                var userID = results["ops"][0]["_id"]; 
+                req.session.userInfo = {"userID": userID, "username": user, "nickname": nickname, "courses": [], "tasks": []}; 
+                var courses = {"userID": userID, "courses": []};
+                var tasks = {"userID": userID, "tasks": []};
+                db.collection('courses').insert(courses, (err1, results1) => {
+                    if (err1)
+                        return res.send(err1); 
+                });
+                db.collection('tasks').insert(tasks, (err2, results2) => {
+                    if (err2)
+                        return res.send(err2)
+                });
                 req.session.admin = true; 
                 return res.redirect('/home');
             });      
