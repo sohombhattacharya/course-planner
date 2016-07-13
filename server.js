@@ -202,8 +202,18 @@ app.post('/api/login', (req, res) => {
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
             if (correctPwd){
-                req.session.userInfo = {"userID": doc._id, "username": doc.username, "nickname": doc.nickname};
-                
+                var userID = doc._id; 
+                var query = {"userID": userID};
+                req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname};
+                db.collection('courses').findOne(query).then(function(doc1){
+                    if (doc1){
+                        req.session.userInfo.courses = doc1.courses; 
+                    }
+                });
+                db.collection('tasks').findOne(query).then(function(doc2){
+                    if (doc2)
+                        req.sesion.userInfo.tasks = doc2.tasks; 
+                });
                 req.session.admin = true; 
                 return res.redirect('/home');
             }
