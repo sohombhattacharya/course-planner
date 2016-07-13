@@ -224,17 +224,6 @@ app.post('/api/login', (req, res) => {
             return res.send("account doesn't exist!"); 
     
     });
-//    db.collection('accounts').find({"username":user}).then(function(cursor) {
-//        if (cursor.count() == 1){
-//            
-//            return res.send("account exists"); 
-//        }
-//        else if (cursor.count() == 0){
-//            return res.send("account doesn't exist"); 
-//        }
-//        else
-//            return res.send("unknown error"); 
-//    });
 });
 
 //app.post('/api/saveDB', (req, res) => {
