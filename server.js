@@ -119,7 +119,20 @@ app.post('/api/updateTask', auth, (req, res) => {
     newTaskName = req.body.newTaskName; 
     newTaskDescription = req.body.newTaskDescription; 
     var query = {"_id": ObjectID(req.session.userInfo.userID), "courses": {"$elemMatch": {"courses.courseName": courseName, "courses.tasks.task": oldTaskName}}};
-    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses": { "$elemMatch": {"courses.courseName": courseName, "courses.tasks.task": newTaskName}}};
+    var existsQuery = {
+    "_id": ObjectID(req.session.userInfo.userID),    
+    "courses": { 
+        "$elemMatch": {
+            "courseName": courseName,
+            "tasks": {
+                "$elemMatch": {
+                    "task": newTaskName,
+//                    "description": newTaskDescription
+                }
+            }
+        }
+    }
+};    
     var courseData = {"$set": {"courses.tasks.$.task": newTaskName, "courses.tasks.$.description": newTaskDescription}};
     var instr = {"returnOriginal": false};    
     db.collection('accounts').find(existsQuery).count().then(function(count) {
@@ -142,7 +155,20 @@ app.post('/api/addTask', auth, (req, res) => {
     taskName = req.body.taskName; 
     taskDescription = req.body.taskDescription; 
     var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName};
-    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses": { "$elemMatch": {"courses.courseName": courseName, "courses.tasks.task": taskName}}};    
+    var existsQuery = {
+    "_id": ObjectID(req.session.userInfo.userID),    
+    "courses": { 
+        "$elemMatch": {
+            "courseName": courseName,
+            "tasks": {
+                "$elemMatch": {
+                    "task": taskName,
+//                    "description": taskDescription
+                }
+            }
+        }
+    }
+};
     var courseData = {"$addToSet": {"courses.$.tasks": {"task": taskName, "description": taskDescription}}};
     var instr = {"returnOriginal": false};
     db.collection('accounts').find(existsQuery).count().then(function(count) {
