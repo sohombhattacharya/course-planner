@@ -256,6 +256,7 @@ app.get('/logout', function (req, res) {
 //app.get('/testGet', function (req, res) {
 //    var respContent = {};
 //    respContent.name = "sohom";
+
 //    respContent.message = "Hello World!";
 //    respContent.params = [1, 2, 3, 4, 5];
 //    respContent.users = [];
