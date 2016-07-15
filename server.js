@@ -80,35 +80,42 @@ app.post('/api/createAccount', (req, res) => {
 app.post('/api/addCourse', auth, (req, res) => {
     courseName = req.body.courseName; 
     courseDescription = req.body.courseDescription; 
-    var query = {"_id": ObjectID(req.session.userInfo.userID)}
-    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName};    
-    var courseData = {"$addToSet": {"courses": {"courseName": courseName, "description": courseDescription, "tasks": []}}};
+    var existsQuery = {"userID": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName}
+    var query = {"userID": ObjectID(req.session.userInfo.userID)};
+    var courseData = {"$addToSet": {"courses": {"courseName": courseName, "description": courseDescription}}};
     var instr = {"returnOriginal": false};
-    db.collection('accounts').find(existsQuery).count().then(function(count) {
-        if (count > 0)
-            return res.send("course with this name already exists!"); 
-        else if (count == 0){  
-            db.collection('accounts').findOneAndUpdate(query, courseData, instr).then(function(doc){
-                req.session.userInfo.courses = doc.value.courses;  
-                return res.redirect('/home');
+    db.collection('courses').find(existsQuery).count().then(function(count){
+        if (count == 0){
+            db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
+                if (doc.value){
+                    console.log(doc); 
+                    req.session.userInfo.courses = doc.value.courses;
+                    return res.redirect('/home');
+                }
+                else
+                    return res.send("database error"); 
             });    
         }
+        else
+            return res.send("courseName already exists!"); 
+            
     });
+
 });
 
 app.post('/api/updateCourse', auth, (req, res) => {
     oldCourseName = req.body.oldCourseName; 
-    courseName = req.body.newCourseName; 
-    courseDescription = req.body.newCourseDescription; 
+    newCourseName = req.body.newCourseName; 
+    newCourseDescription = req.body.newCourseDescription; 
     var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": oldCourseName};
-    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName};
-    var courseData = {"$set": {"courses.$.courseName": courseName, "courses.$.description": courseDescription}};
+    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": newCourseName};
+    var courseData = {"$set": {"courses.$.courseName": newCourseName, "courses.$.description": newCourseDescription}};
     var instr = {"returnOriginal": false};
-    db.collection('accounts').find(existsQuery).count().then(function(count) {
+    db.collection('courses').find(existsQuery).count().then(function(count) {
         if (count > 0)
             return res.send("course with this name already exists!"); 
         else if (count == 0){
-            db.collection('accounts').findOneAndUpdate(query, courseData, instr).then(function(doc){
+            db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
                 req.session.userInfo.courses = doc.value.courses;  
                 return res.redirect('/home');
             });
@@ -129,7 +136,7 @@ app.post('/api/updateTask', auth, (req, res) => {
     oldTaskName = req.body.oldTaskName; 
     newTaskName = req.body.newTaskName; 
     newTaskDescription = req.body.newTaskDescription; 
-    var query = 
+//    var query = 
     var existsQuery = {
     "_id": ObjectID(req.session.userInfo.userID),    
     "courses": { 
@@ -166,20 +173,7 @@ app.post('/api/addTask', auth, (req, res) => {
     taskName = req.body.taskName; 
     taskDescription = req.body.taskDescription; 
     var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName};
-    var existsQuery = {
-    "_id": ObjectID(req.session.userInfo.userID),    
-    "courses": { 
-        "$elemMatch": {
-            "courseName": courseName,
-            "tasks": {
-                "$elemMatch": {
-                    "task": taskName,
-//                    "description": taskDescription
-                }
-            }
-        }
-    }
-};
+    
     var courseData = {"$addToSet": {"courses.$.tasks": {"task": taskName, "description": taskDescription}}};
     var instr = {"returnOriginal": false};
     db.collection('accounts').find(existsQuery).count().then(function(count) {
@@ -203,18 +197,23 @@ app.post('/api/login', (req, res) => {
             var correctPwd = bcrypt.compareSync(pwd, hash);
             if (correctPwd){
                 var userID = doc._id; 
-                var query = {"userID": userID};
-                req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname};
+                var query = {"userID": ObjectID(userID)};
+                req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname, "courses": [], "tasks": []};
                 db.collection('courses').findOne(query).then(function(doc1){
+//                    console.log(doc1);
                     if (doc1){
+                        console.log(doc1);
                         req.session.userInfo.courses = doc1.courses; 
+//                        console.log(req.session.userInfo.courses);
                     }
                 });
                 db.collection('tasks').findOne(query).then(function(doc2){
+//                    console.log(doc2);
                     if (doc2)
-                        req.sesion.userInfo.tasks = doc2.tasks; 
+                        req.session.userInfo.tasks = doc2.tasks; 
                 });
                 req.session.admin = true; 
+                console.log(req.session); 
                 return res.redirect('/home');
             }
             else
@@ -225,19 +224,6 @@ app.post('/api/login', (req, res) => {
     
     });
 });
-
-//app.post('/api/saveDB', (req, res) => {
-//    var respContent = {};
-//    respContent.user_id = req.body.id + "2222";
-//    respContent.token = req.body.token;
-//    respContent.geo = req.body.geo;    
-//    
-//    db.collection('testCollection').save(respContent, (err, result) => {
-//    if (err) return console.log(err);
-//    console.log('saved to database');
-//    res.json(respContent);
-//  });
-//});
 
 app.get('/',function(req,res){
   res.sendFile(path.join(__dirname+'/views/index.html'));
@@ -252,31 +238,3 @@ app.get('/logout', function (req, res) {
   req.session.destroy();
   res.redirect('/');
 });
-
-//app.get('/testGet', function (req, res) {
-//    var respContent = {};
-//    respContent.name = "sohom";
-
-//    respContent.message = "Hello World!";
-//    respContent.params = [1, 2, 3, 4, 5];
-//    respContent.users = [];
-//    respContent.users.push({"user": "josh"});
-//    respContent.users.push({"user": "juee"});
-//    
-//    res.json(respContent);
-//});
-
-
-//app.post('/api/users', function(req, res) {
-//    var respContent = {};
-//    respContent.user_id = req.body.id + "2222";
-//    respContent.token = req.body.token;
-//    respContent.geo = req.body.geo;
-//    res.json(respContent);
-//
-////    res.send(user_id + ' ' + token + ' ' + geo);
-//});
-
-//app.listen(port, function () {
-//  console.log('course-planner listening on port 3000');
-//});
