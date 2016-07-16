@@ -108,15 +108,16 @@ app.post('/api/updateCourse', auth, (req, res) => {
     newCourseName = req.body.newCourseName; 
     newCourseDescription = req.body.newCourseDescription; 
     var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": oldCourseName};
-    var existsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": newCourseName};
+    var courseExistsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": newCourseName};
     var courseData = {"$set": {"courses.$.courseName": newCourseName, "courses.$.description": newCourseDescription}};
     var instr = {"returnOriginal": false};
-    db.collection('courses').find(existsQuery).count().then(function(count) {
+    db.collection('courses').find(courseExistsQuery).count().then(function(count) {
         if (count > 0)
             return res.send("course with this name already exists!"); 
         else if (count == 0){
             db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
                 req.session.userInfo.courses = doc.value.courses;  
+                db.collection('tasks').find(
                 return res.redirect('/home');
             });
         }
@@ -204,24 +205,23 @@ app.post('/api/login', (req, res) => {
                     if (doc1){
                         console.log(doc1);
                         req.session.userInfo.courses = doc1.courses; 
-//                        console.log(req.session.userInfo.courses);
+                    
+                        db.collection('tasks').findOne(query).then(function(doc2){
+//                          console.log(doc2);
+                            if (doc2)
+                                req.session.userInfo.tasks = doc2.tasks; 
+                            });
+                        req.session.admin = true; 
+//                      console.log(req.session); 
+                        return res.redirect('/home');                    
                     }
                 });
-                db.collection('tasks').findOne(query).then(function(doc2){
-//                    console.log(doc2);
-                    if (doc2)
-                        req.session.userInfo.tasks = doc2.tasks; 
-                });
-                req.session.admin = true; 
-                console.log(req.session); 
-                return res.redirect('/home');
             }
             else
                 return res.send("incorrect username/password"); 
         }
         else
             return res.send("account doesn't exist!"); 
-    
     });
 });
 
