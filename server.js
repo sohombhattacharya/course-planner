@@ -56,16 +56,6 @@ app.post('/api/createAccount', (req, res) => {
                 }
                 var userID = results["ops"][0]["_id"]; 
                 req.session.userInfo = {"userID": userID, "username": user, "nickname": nickname, "courses": [], "tasks": []}; 
-                var courses = {"userID": userID, "courses": []};
-                var tasks = {"userID": userID, "tasks": []};
-                db.collection('courses').insert(courses, (err1, results1) => {
-                    if (err1)
-                        return res.send(err1); 
-                });
-                db.collection('tasks').insert(tasks, (err2, results2) => {
-                    if (err2)
-                        return res.send(err2)
-                });
                 req.session.admin = true; 
                 return res.redirect('/home');
             });      
@@ -80,20 +70,21 @@ app.post('/api/createAccount', (req, res) => {
 app.post('/api/addCourse', auth, (req, res) => {
     courseName = req.body.courseName; 
     courseDescription = req.body.courseDescription; 
-    var existsQuery = {"userID": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName}
-    var query = {"userID": ObjectID(req.session.userInfo.userID)};
-    var courseData = {"$addToSet": {"courses": {"courseName": courseName, "description": courseDescription}}};
-    var instr = {"returnOriginal": false};
-    db.collection('courses').find(existsQuery).count().then(function(count){
-        if (count == 0){
-            db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
-                if (doc.value){
-                    console.log(doc); 
-                    req.session.userInfo.courses = doc.value.courses;
-                    return res.redirect('/home');
-                }
-                else
-                    return res.send("database error"); 
+    var query = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName};
+    var docToInsert = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName, "courseDescription": courseDescription};
+    db.collection('courses').find(query).toArray(function(err, results){
+        if (err)
+            res.send(err); 
+        if (results.length == 0){
+            db.collection('courses').insert(docToInsert, function(err, results){
+                if(err)
+                    console.log(err); 
+
+                var courses = getCoursesOrTasks("courses", ObjectID(req.session.userInfo.userID)); 
+                var tasks = getCoursesOrTasks("tasks", ObjectID(req.session.userInfo.userID)); 
+                console.log(courses);
+                console.log(tasks); 
+                return res.redirect('/home');
             });    
         }
         else
@@ -117,7 +108,6 @@ app.post('/api/updateCourse', auth, (req, res) => {
         else if (count == 0){
             db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
                 req.session.userInfo.courses = doc.value.courses;  
-                db.collection('tasks').find(
                 return res.redirect('/home');
             });
         }
@@ -197,25 +187,22 @@ app.post('/api/login', (req, res) => {
             var hash = doc.password;
             var correctPwd = bcrypt.compareSync(pwd, hash);
             if (correctPwd){
+//                console.log("correct pass"); 
                 var userID = doc._id; 
                 var query = {"userID": ObjectID(userID)};
                 req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname, "courses": [], "tasks": []};
-                db.collection('courses').findOne(query).then(function(doc1){
-//                    console.log(doc1);
-                    if (doc1){
-                        console.log(doc1);
-                        req.session.userInfo.courses = doc1.courses; 
-                    
-                        db.collection('tasks').findOne(query).then(function(doc2){
-//                          console.log(doc2);
-                            if (doc2)
-                                req.session.userInfo.tasks = doc2.tasks; 
-                            });
-                        req.session.admin = true; 
-//                      console.log(req.session); 
-                        return res.redirect('/home');                    
-                    }
-                });
+                
+                db.collection('courses').find(query).toArray(function(err, results){
+//                    console.log(results); 
+
+                    db.collection('tasks').find(query).toArray(function(err1, results1){
+//                        console.log(results1);
+
+                        });     
+                    });
+                    req.session.admin = true; 
+                    return res.redirect('/home');                    
+                
             }
             else
                 return res.send("incorrect username/password"); 
@@ -224,6 +211,15 @@ app.post('/api/login', (req, res) => {
             return res.send("account doesn't exist!"); 
     });
 });
+
+function getCoursesOrTasks(collection, userID){
+    var query = {"userID": userID};
+    db.collection(collection).find(query).toArray(function(err, results){
+        if (err)
+            return err; 
+        return results; 
+    });
+}
 
 app.get('/',function(req,res){
   res.sendFile(path.join(__dirname+'/views/index.html'));
