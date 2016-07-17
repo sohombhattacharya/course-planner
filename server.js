@@ -171,60 +171,54 @@ NEED TO FIX THIS updateTask CALL, QUERY AND EXISTSQUERY NOT WORKING CORRECTLY*
 ******************************************************************************
 */
 app.post('/api/updateTask', auth, (req, res) => {
-    courseName = req.body.courseName; 
-    oldTaskName = req.body.oldTaskName; 
-    newTaskName = req.body.newTaskName; 
-    newTaskDescription = req.body.newTaskDescription; 
-//    var query = 
-    var existsQuery = {
-    "_id": ObjectID(req.session.userInfo.userID),    
-    "courses": { 
-        "$elemMatch": {
-            "courseName": courseName,
-            "tasks": {
-                "$elemMatch": {
-                    "task": newTaskName,
-//                    "description": newTaskDescription
-                }
-            }
-        }
-    }
-};    
-    var courseData = {"$set": {"courses.tasks.$.task": newTaskName, "courses.tasks.$.description": newTaskDescription}};
-    var instr = {"returnOriginal": false};    
-    db.collection('accounts').find(existsQuery).count().then(function(count) {
-        console.log("done with existsQuery");
-        if (count > 0)
-            return res.send("task with this name already exists!");
-        else if (count == 0){
-            db.collection('accounts').findOneAndUpdate(query, courseData, instr).then(function(doc){
-                console.log("done with query");
-                req.session.userInfo.courses = doc.value.courses;  
-                return res.redirect('/home');
-            });        
-        }
-    });  
+    var courseName = req.body.courseName; 
+    var oldTaskName = req.body.oldTaskName; 
+    var newTaskName = req.body.newTaskName; 
+    var newTaskDescription = req.body.newTaskDescription; 
+    var userID = ObjectID(req.session.userInfo.userID);
+    var query = {"userID": userID, "courseName": courseName, "task": newTaskName}; 
+    var oldTaskQuery = {"userID": userID, "courseName": courseName, "task": oldTaskName};
+    db.collection(
+
     
 });
 
 app.post('/api/addTask', auth, (req, res) => {
-    courseName = req.body.courseName; 
-    taskName = req.body.taskName; 
-    taskDescription = req.body.taskDescription; 
-    var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": courseName};
+    var courseName = req.body.courseName; 
+    var taskName = req.body.taskName; 
+    var taskDescription = req.body.taskDescription; 
+    var userID = ObjectID(req.session.userInfo.userID);
+    var taskQuery = {"userID": userID, "task": taskName, "course": courseName, "description": taskDescription};
+    var query = {"userID": userID, "task": taskName, "course": courseName}; 
+    db.collection('tasks').find(query).toArray(function(err, results){
+        if (err)
+            return res.send(err); 
+        else if (results)
+            if (results.length == 0){
+                var docToInsert = {"userID": userID, "course": courseName, "task": taskName, "description": taskDescription};
+                db.collection('tasks').insert(docToInsert, function(err1, results1){
+                    if (err1)
+                        return res.send(err1); 
+                    else{
+                        db.collection('tasks').findOne(taskQuery, function(err2, doc){
+                            if (err2)
+                                return res.send(err2); 
+                            else if (doc){
+//                                console.log(doc); 
+                                var newTaskRow = {"course": courseName, "task": doc.task, "description": doc.description}; 
+                                req.session.userInfo.tasks.push(newTaskRow);  
+                                return res.redirect('/home'); 
+                            }
+                        }); 
+                    }
+                });
+            }
+            else if (results.length == 1)
+                return res.send("this task already exists for the course!");
+            else 
+                return res.send("unknown error"); 
+    }); 
     
-    var courseData = {"$addToSet": {"courses.$.tasks": {"task": taskName, "description": taskDescription}}};
-    var instr = {"returnOriginal": false};
-    db.collection('accounts').find(existsQuery).count().then(function(count) {
-        if (count > 0)
-            return res.send("task with this name already exists!");
-        else if (count == 0){
-            db.collection('accounts').findOneAndUpdate(query, courseData, instr).then(function(doc){
-                req.session.userInfo.courses = doc.value.courses;  
-                return res.redirect('/home');
-            });        
-        }
-    });   
 });
 
 app.post('/api/login', (req, res) => {
@@ -252,9 +246,9 @@ app.post('/api/login', (req, res) => {
                         db.collection('tasks').find(query).toArray(function(err1, results1){
                             if (err1)
                                 return res.send(err1); 
-                            else if (results){
+                            else if (results1){
                                 for (i = 0; i < results1.length; i++){
-                                    var taskRow = {"task": results1[i].taskName, "description": results1[i].taskDescription};
+                                    var taskRow = {"course": results1[i].course, "task": results1[i].task, "description": results1[i].description};
                                     req.session.userInfo.tasks.push(taskRow); 
                                 }
                                 req.session.admin = true; 
