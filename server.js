@@ -82,8 +82,25 @@ app.post('/api/addCourse', auth, (req, res) => {
 
                 var courses = getCoursesOrTasks("courses", ObjectID(req.session.userInfo.userID)); 
                 var tasks = getCoursesOrTasks("tasks", ObjectID(req.session.userInfo.userID)); 
-                console.log(courses);
-                console.log(tasks); 
+                
+                courses.forEach(function(err, result){
+                    if (err)
+                        console.log(err)
+                    else{
+                        var newCourse = {"course": result.courseName, "description": result.courseDescription};
+                        req.session.userInfo.courses.push(newCourse);
+                    }     
+                });
+                
+                tasks.forEach(function(err, result){
+                    if (err)
+                        console.log(err)
+                    else{
+                        var newTask = {"task": result.taskName, "description": result.taskDescription};
+                        req.session.userInfo.tasks.push(newTask);
+                    }     
+                });                
+                
                 return res.redirect('/home');
             });    
         }
@@ -180,7 +197,8 @@ app.post('/api/addTask', auth, (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-    user = req.body.username; 
+    var user = req.body.username; 
+    var query = {"username": user};
     db.collection('accounts').findOne({"username": user}).then(function(doc){
         if (doc){
             pwd = req.body.password;          
@@ -210,16 +228,26 @@ app.post('/api/login', (req, res) => {
         else
             return res.send("account doesn't exist!"); 
     });
+//    var userAccount = db.collection('accounts').find(query);
+////    console.log(userAccount); 
+//    userAccount.forEach(function(err, result){
+//        if (err)
+//            console.log(err)
+//        else
+//            console.log(result); 
+//    });
+//    console.log("after accounts query"); 
 });
 
 function getCoursesOrTasks(collection, userID){
     var query = {"userID": userID};
-    db.collection(collection).find(query).toArray(function(err, results){
-        if (err)
-            return err; 
-        return results; 
-    });
-}
+    console.log("before cursor");
+    var cursor = db.collection(collection).find(query); 
+    console.log("after cursor"); 
+    return cursor; 
+};
+
+function callback(results){return results};
 
 app.get('/',function(req,res){
   res.sendFile(path.join(__dirname+'/views/index.html'));
