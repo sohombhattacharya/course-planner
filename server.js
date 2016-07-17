@@ -70,8 +70,9 @@ app.post('/api/createAccount', (req, res) => {
 app.post('/api/addCourse', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var courseDescription = req.body.courseDescription; 
-    var query = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName};
-    var docToInsert = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName, "courseDescription": courseDescription};
+    var userID = ObjectID(req.session.userInfo.userID);
+    var query = {"userID": userID, "courseName": courseName};
+    var docToInsert = {"userID": userID, "courseName": courseName, "courseDescription": courseDescription};
     db.collection('courses').find(query).toArray(function(err, results){
         if (err)
             return res.send(err); 
@@ -80,7 +81,7 @@ app.post('/api/addCourse', auth, (req, res) => {
                 if(err1)
                     return res.send(err1);
                 else{
-                    var simpleQuery = {"userID": ObjectID(req.session.userInfo.userID)};
+                    var simpleQuery = {"userID": userID};
                     db.collection('courses').findOne(query, function(err2, results2){
                         if (err2)
                             return res.send(err2); 
@@ -94,10 +95,8 @@ app.post('/api/addCourse', auth, (req, res) => {
             });    
         }
         else
-            return res.send("courseName already exists!"); 
-            
+            return res.send("courseName already exists!");      
     });
-
 });
 
 app.post('/api/updateCourse', auth, (req, res) => {
