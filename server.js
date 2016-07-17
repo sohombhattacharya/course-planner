@@ -68,40 +68,29 @@ app.post('/api/createAccount', (req, res) => {
     });
 });
 app.post('/api/addCourse', auth, (req, res) => {
-    courseName = req.body.courseName; 
-    courseDescription = req.body.courseDescription; 
+    var courseName = req.body.courseName; 
+    var courseDescription = req.body.courseDescription; 
     var query = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName};
     var docToInsert = {"userID": ObjectID(req.session.userInfo.userID), "courseName": courseName, "courseDescription": courseDescription};
     db.collection('courses').find(query).toArray(function(err, results){
         if (err)
-            res.send(err); 
+            return res.send(err); 
         if (results.length == 0){
-            db.collection('courses').insert(docToInsert, function(err, results){
-                if(err)
-                    console.log(err); 
-
-                var courses = getCoursesOrTasks("courses", ObjectID(req.session.userInfo.userID)); 
-                var tasks = getCoursesOrTasks("tasks", ObjectID(req.session.userInfo.userID)); 
-                
-                courses.forEach(function(err, result){
-                    if (err)
-                        console.log(err)
-                    else{
-                        var newCourse = {"course": result.courseName, "description": result.courseDescription};
-                        req.session.userInfo.courses.push(newCourse);
-                    }     
-                });
-                
-                tasks.forEach(function(err, result){
-                    if (err)
-                        console.log(err)
-                    else{
-                        var newTask = {"task": result.taskName, "description": result.taskDescription};
-                        req.session.userInfo.tasks.push(newTask);
-                    }     
-                });                
-                
-                return res.redirect('/home');
+            db.collection('courses').insert(docToInsert, function(err1, results1){
+                if(err1)
+                    return res.send(err1);
+                else{
+                    var simpleQuery = {"userID": ObjectID(req.session.userInfo.userID)};
+                    db.collection('courses').findOne(query, function(err2, results2){
+                        if (err2)
+                            return res.send(err2); 
+                        else{
+                            var courseRow = {"course": results2.courseName, "description": results2.courseDescription};
+                            req.session.userInfo.courses.push(courseRow); 
+                            return res.redirect('/home'); 
+                        }
+                    });
+                }
             });    
         }
         else
@@ -211,16 +200,30 @@ app.post('/api/login', (req, res) => {
                 req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname, "courses": [], "tasks": []};
                 
                 db.collection('courses').find(query).toArray(function(err, results){
-//                    console.log(results); 
-
-                    db.collection('tasks').find(query).toArray(function(err1, results1){
-//                        console.log(results1);
-
-                        });     
-                    });
-                    req.session.admin = true; 
-                    return res.redirect('/home');                    
-                
+                    if (err)
+                        return res.send(err);
+                    else if (results){
+                        for (i = 0; i < results.length; i++){
+                            var courseRow = {"course": results[i].courseName, "description": results[i].courseDescription};
+                            req.session.userInfo.courses.push(courseRow); 
+                        }
+                        db.collection('tasks').find(query).toArray(function(err1, results1){
+                            if (err1)
+                                return res.send(err1); 
+                            else if (results){
+                                for (i = 0; i < results1.length; i++){
+                                    var taskRow = {"task": results1[i].taskName, "description": results1[i].taskDescription};
+                                    req.session.userInfo.tasks.push(taskRow); 
+                                }
+                                req.session.admin = true; 
+                                return res.redirect('/home'); 
+                            }
+                            
+                        });    
+                    
+                    }
+                        
+                });                   
             }
             else
                 return res.send("incorrect username/password"); 
@@ -228,26 +231,8 @@ app.post('/api/login', (req, res) => {
         else
             return res.send("account doesn't exist!"); 
     });
-//    var userAccount = db.collection('accounts').find(query);
-////    console.log(userAccount); 
-//    userAccount.forEach(function(err, result){
-//        if (err)
-//            console.log(err)
-//        else
-//            console.log(result); 
-//    });
-//    console.log("after accounts query"); 
 });
 
-function getCoursesOrTasks(collection, userID){
-    var query = {"userID": userID};
-    console.log("before cursor");
-    var cursor = db.collection(collection).find(query); 
-    console.log("after cursor"); 
-    return cursor; 
-};
-
-function callback(results){return results};
 
 app.get('/',function(req,res){
   res.sendFile(path.join(__dirname+'/views/index.html'));
