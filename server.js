@@ -105,15 +105,16 @@ app.post('/api/updateCourse', auth, (req, res) => {
     var newCourseName = req.body.newCourseName; 
     var newCourseDescription = req.body.newCourseDescription; 
     var userID = ObjectID(req.session.userInfo.userID); 
+    var masterQuery = {"userID": userID};
     var query = {"userID": userID, "courseName": oldCourseName};
     var courseExistsQuery = {"userID": userID, "courseName": newCourseName};   
     var courseData = {"$set": {"courseName": newCourseName, "courseDescription": newCourseDescription}};
     db.collection('courses').find(query).count().then(function(count){
         if (count == 1){
-            db.collection('courses').find(courseExistsQuery).count().then(function(count) {
-                if (count > 0)
+            db.collection('courses').find(courseExistsQuery).count().then(function(count1) {
+                if (count1 > 0)
                     return res.send("course with this name already exists!"); 
-                else if (count == 0){
+                else if (count1 == 0){
                     db.collection('courses').updateOne(query, courseData, function(err, doc){
                         if (err)
                             return res.send(err);
@@ -123,16 +124,28 @@ app.post('/api/updateCourse', auth, (req, res) => {
                                     if (err1)
                                         return res.send(err1); 
                                     else if (doc1){
-                                        var coursesList = req.session.userInfo.courses; 
+                                        var coursesList = req.session.userInfo.courses;
+                                        var tasksList = req.session.userInfo.tasks; 
                                         var newCourseRow = {"course": doc1.courseName, "description": doc1.courseDescription};
-                                        var oldCourseIndex; 
                                         // WANT TO FIND A BETTER WAY TO FIND INDEX OF WITHOUT FOR LOOP
                                         for (i = 0; i < coursesList.length; i++){
                                             if (coursesList[i].course == oldCourseName)
-                                                oldCourseIndex = i; 
+                                                req.session.userInfo.courses[i] = newCourseRow;
                                         }
-                                        req.session.userInfo.courses[oldCourseIndex] = newCourseRow;
-                                        return res.redirect('/home');
+                                        var taskQuery = {"userID": userID, "course": oldCourseName};
+                                        var taskData = {"$set": {"courseName": newCourseName}};
+                                        db.collection('tasks').update(taskQuery, taskData, function(err2, results){
+                                            if (err2)
+                                                return res.send(err2); 
+                                            
+                                            else if (results){
+                                                for (i = 0; i < tasksList.length; i++){
+                                                    if (tasksList[i].course == oldCourseName)
+                                                        tasksList[i].course = newCourseName; 
+                                                }
+                                                return res.redirect('/home');                                
+                                            }
+                                        });
                                     }
                                 });
                             }
