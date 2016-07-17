@@ -100,20 +100,32 @@ app.post('/api/addCourse', auth, (req, res) => {
 });
 
 app.post('/api/updateCourse', auth, (req, res) => {
-    oldCourseName = req.body.oldCourseName; 
-    newCourseName = req.body.newCourseName; 
-    newCourseDescription = req.body.newCourseDescription; 
-    var query = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": oldCourseName};
-    var courseExistsQuery = {"_id": ObjectID(req.session.userInfo.userID), "courses.courseName": newCourseName};
-    var courseData = {"$set": {"courses.$.courseName": newCourseName, "courses.$.description": newCourseDescription}};
-    var instr = {"returnOriginal": false};
+    var oldCourseName = req.body.oldCourseName; 
+    var newCourseName = req.body.newCourseName; 
+    var newCourseDescription = req.body.newCourseDescription; 
+    var userID = ObjectID(req.session.userInfo.userID); 
+    var query = {"userID": userID, "courseName": oldCourseName};
+    var courseExistsQuery = {"userID": userID, "courseName": newCourseName};
+    var courseData = {"$set": {"courseName": newCourseName, "courseDescription": newCourseDescription}};
     db.collection('courses').find(courseExistsQuery).count().then(function(count) {
         if (count > 0)
             return res.send("course with this name already exists!"); 
         else if (count == 0){
-            db.collection('courses').findOneAndUpdate(query, courseData, instr).then(function(doc){
-                req.session.userInfo.courses = doc.value.courses;  
-                return res.redirect('/home');
+            db.collection('courses').updateOne(query, courseData, function(err, doc){
+                if (err)
+                    return res.send(err);
+                else if (doc){
+                    if (doc.matchedCount == 1 && doc.modifiedCount == 1){
+                        db.collection('courses').findOne(courseExistsQuery, function(err1, doc1){
+                            if (err1)
+                                return res.send(err1); 
+                            else if (doc1){
+                                //set frontend oldcourse to newcourse response
+                                return res.redirect('/home');
+                            }
+                        });
+                    }
+                }
             });
         }
     });
