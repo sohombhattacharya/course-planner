@@ -100,35 +100,53 @@ app.post('/api/addCourse', auth, (req, res) => {
 });
 
 app.post('/api/updateCourse', auth, (req, res) => {
-    var oldCourseName = req.body.oldCourseName; 
+    var oldCourseName = req.body.oldCourseName;
+    var oldCourseDescription = req.body.oldCourseDescription; 
     var newCourseName = req.body.newCourseName; 
     var newCourseDescription = req.body.newCourseDescription; 
     var userID = ObjectID(req.session.userInfo.userID); 
     var query = {"userID": userID, "courseName": oldCourseName};
-    var courseExistsQuery = {"userID": userID, "courseName": newCourseName};
+    var courseExistsQuery = {"userID": userID, "courseName": newCourseName};   
     var courseData = {"$set": {"courseName": newCourseName, "courseDescription": newCourseDescription}};
-    db.collection('courses').find(courseExistsQuery).count().then(function(count) {
-        if (count > 0)
-            return res.send("course with this name already exists!"); 
-        else if (count == 0){
-            db.collection('courses').updateOne(query, courseData, function(err, doc){
-                if (err)
-                    return res.send(err);
-                else if (doc){
-                    if (doc.matchedCount == 1 && doc.modifiedCount == 1){
-                        db.collection('courses').findOne(courseExistsQuery, function(err1, doc1){
-                            if (err1)
-                                return res.send(err1); 
-                            else if (doc1){
-                                //set frontend oldcourse to newcourse response
-                                return res.redirect('/home');
+    db.collection('courses').find(query).count().then(function(count){
+        if (count == 1){
+            db.collection('courses').find(courseExistsQuery).count().then(function(count) {
+                if (count > 0)
+                    return res.send("course with this name already exists!"); 
+                else if (count == 0){
+                    db.collection('courses').updateOne(query, courseData, function(err, doc){
+                        if (err)
+                            return res.send(err);
+                        else if (doc){
+                            if (doc.matchedCount == 1 && doc.modifiedCount == 1){
+                                db.collection('courses').findOne(courseExistsQuery, function(err1, doc1){
+                                    if (err1)
+                                        return res.send(err1); 
+                                    else if (doc1){
+                                        var coursesList = req.session.userInfo.courses; 
+                                        var newCourseRow = {"course": doc1.courseName, "description": doc1.courseDescription};
+                                        var oldCourseIndex; 
+                                        // WANT TO FIND A BETTER WAY TO FIND INDEX OF WITHOUT FOR LOOP
+                                        for (i = 0; i < coursesList.length; i++){
+                                            if (coursesList[i].course == oldCourseName)
+                                                oldCourseIndex = i; 
+                                        }
+                                        req.session.userInfo.courses[oldCourseIndex] = newCourseRow;
+                                        return res.redirect('/home');
+                                    }
+                                });
                             }
-                        });
-                    }
+                        }
+                    });
                 }
-            });
+            });        
         }
-    });
+        else if (count == 0)
+            return res.send("old course with this name currently does not exist"); 
+        else
+            return res.send("unknown error"); 
+    }); 
+
 });
 
 
@@ -254,7 +272,7 @@ app.get('/home', auth, function(req, res){
     res.json(req.session); 
 });
 
-app.get('/logout', function (req, res) {
+app.get('/logout', auth, function (req, res) {
   req.session.destroy();
   res.redirect('/');
 });
