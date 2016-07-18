@@ -342,7 +342,7 @@ app.get('/home', auth, function(req, res){
     res.json(req.session); 
 });
 
-app.post('/logout', auth, function (req, res) {
+app.get('/api/logout', auth, function (req, res) {
   req.session.destroy();
   res.redirect('/');
 });
