@@ -67,6 +67,56 @@ app.post('/api/createAccount', (req, res) => {
             res.send("unknown error"); 
     });
 });
+
+app.post('/api/removeCourse', auth, (req, res) =>{
+    var courseName = req.body.courseName; 
+    var userID = ObjectID(req.session.userInfo.userID);
+    var query = {"userID": userID, "courseName": courseName};
+    var tasksQuery = {"userID": userID, "course": courseName}; 
+    db.collection('courses').find(query).toArray(function(err, results){
+        if (err)
+            res.send(err); 
+        else if (results){
+            if (results.length == 1){
+                db.collection('courses').remove(query, function(err1, results1){
+                    if (err1)
+                        return res.send(err1); 
+                    else if (results1){
+                        var coursesList = req.session.userInfo.courses; 
+                        for (i = 0; i < coursesList.length; i++){
+                            if (coursesList[i].course == courseName){
+                                coursesList.splice(i, 1); 
+                                break; 
+                            }
+                        }
+                        req.session.userInfo.courses = coursesList; 
+                        db.collection('tasks').remove(tasksQuery, function(err2, results2){
+                            if (err2)
+                                return res.send(err2); 
+                            else if (results2){
+                                console.log(results2); 
+                                var tasksList = req.session.userInfo.tasks; 
+                                for (i = 0; i < tasksList.length; i++){
+                                    if (tasksList[i].course == courseName){
+                                        tasksList.splice(i, 1); 
+                                        break; 
+                                    }
+                                }
+                                req.session.userInfo.tasks = tasksList; 
+                                return res.redirect('/home'); 
+                            }
+                            
+                        }); 
+                    }
+                }); 
+            }
+            else if (results.length == 0)
+                return res.send("course to remove does not exist!"); 
+            else
+                return res.send("unknown error");
+        }
+    }); 
+}); 
 app.post('/api/addCourse', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var courseDescription = req.body.courseDescription; 
@@ -166,14 +216,45 @@ app.post('/api/updateCourse', auth, (req, res) => {
 
 });
 
-
-
-
-/*
-******************************************************************************
-NEED TO FIX THIS updateTask CALL, QUERY AND EXISTSQUERY NOT WORKING CORRECTLY*
-******************************************************************************
-*/
+app.post('/api/removeTask', auth, (req, res) => {
+    var courseName = req.body.courseName; 
+    var taskName = req.body.taskName; 
+    var taskDescription = req.body.taskDescription; 
+    var userID = ObjectID(req.session.userInfo.userID);
+    var query = {"userID": userID, "course": courseName, "task": taskName, "description": taskDescription}; 
+    db.collection('tasks').find(query).toArray(function(err, results){
+        if (err)
+            return res.send(err);
+        else if (results){
+            console.log("test");
+            if (results.length == 1){
+                console.log("test1"); 
+                db.collection('tasks').remove(query, function(err1, results1){
+                    console.log("test2"); 
+                    if (err1)
+                        return res.send(err1)
+                    else if (results1){
+                        console.log(results1); 
+                        var tasksList = req.session.userInfo.tasks; 
+                        for (i = 0; i < tasksList.length; i++){
+                            if (tasksList[i].task == taskName && tasksList[i].course == courseName && tasksList[i].description == taskDescription){
+                                console.log(i); 
+                                tasksList.splice(i, 1); 
+                                break; 
+                            }
+                        }
+                        return res.redirect('/home');                         
+                    }
+                }); 
+            }
+            else if (results.length == 0)
+                return res.send("this specific task does not exist!"); 
+            else 
+                return res.send("this task appears multiple times in db - error"); 
+        }
+    
+    }); 
+}); 
 app.post('/api/updateTask', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var oldTaskName = req.body.oldTaskName; 
