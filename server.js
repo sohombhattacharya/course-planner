@@ -130,10 +130,11 @@ app.post('/api/updateCourse', auth, (req, res) => {
                                         // WANT TO FIND A BETTER WAY TO FIND INDEX OF WITHOUT FOR LOOP
                                         for (i = 0; i < coursesList.length; i++){
                                             if (coursesList[i].course == oldCourseName)
-                                                req.session.userInfo.courses[i] = newCourseRow;
+                                                coursesList[i] = newCourseRow;
                                         }
+                                        req.session.userInfo.courses = coursesList; 
                                         var taskQuery = {"userID": userID, "course": oldCourseName};
-                                        var taskData = {"$set": {"courseName": newCourseName}};
+                                        var taskData = {"$set": {"course": newCourseName}};
                                         db.collection('tasks').update(taskQuery, taskData, function(err2, results){
                                             if (err2)
                                                 return res.send(err2); 
@@ -143,12 +144,15 @@ app.post('/api/updateCourse', auth, (req, res) => {
                                                     if (tasksList[i].course == oldCourseName)
                                                         tasksList[i].course = newCourseName; 
                                                 }
+                                                req.session.userInfo.tasks = tasksList; 
                                                 return res.redirect('/home');                                
                                             }
                                         });
                                     }
                                 });
                             }
+                            else
+                                return res.send("didn't modify correctly"); 
                         }
                     });
                 }
@@ -176,9 +180,56 @@ app.post('/api/updateTask', auth, (req, res) => {
     var newTaskName = req.body.newTaskName; 
     var newTaskDescription = req.body.newTaskDescription; 
     var userID = ObjectID(req.session.userInfo.userID);
-    var query = {"userID": userID, "courseName": courseName, "task": newTaskName}; 
-    var oldTaskQuery = {"userID": userID, "courseName": courseName, "task": oldTaskName};
-    db.collection(
+    var query = {"userID": userID, "course": courseName, "task": newTaskName}; 
+    var oldTaskQuery = {"userID": userID, "course": courseName, "task": oldTaskName};
+    var taskData = {"$set": {"task": newTaskName, "description": newTaskDescription}};    
+    db.collection('tasks').find(oldTaskQuery).toArray(function(err, results){
+        if (err)
+            return res.send(err); 
+        else if (results){
+            if (results.length == 1){
+                db.collection('tasks').find(query).toArray(function(err1, results1){
+                    if (err1)
+                        return res.send(err1); 
+                    else if (results1.length == 0){
+                        db.collection('tasks').updateOne(oldTaskQuery, taskData, function(err2, results2){
+                            if (err2)
+                                return res.send(err2);
+                            else if (results2){
+                                if (results2.matchedCount == 1 && results2.modifiedCount == 1){
+                                    db.collection('tasks').findOne(query, function(err3, doc){
+                                        if (err3)
+                                            return res.send(err3); 
+                                        else if (doc){
+                                            var tasksList = req.session.userInfo.tasks; 
+                                            for (i = 0; i < tasksList.length; i++){
+                                                if (tasksList[i].task == oldTaskName && tasksList[i].course == courseName){
+                                                    tasksList[i].task = doc.task; 
+                                                    tasksList[i].description = doc.description;
+                                                }
+                                            }
+                                            return res.redirect('/home'); 
+                                        }
+                                    }); 
+                                }    
+                                else
+                                    return res.send("didn't modify correctly"); 
+                            }
+                        }); 
+                        
+                    }
+                    else if (results1.length == 1)
+                        return res.send("task with this name already exists!"); 
+                    else 
+                        return res.send("unknown error - internal"); 
+                }); 
+            }
+            else if (results.length == 0)
+                return res.send("old task name doesn't exist for this course!"); 
+            else
+                return res.send("unknown error - external"); 
+        }
+    }); 
 
     
 });
@@ -189,36 +240,48 @@ app.post('/api/addTask', auth, (req, res) => {
     var taskDescription = req.body.taskDescription; 
     var userID = ObjectID(req.session.userInfo.userID);
     var taskQuery = {"userID": userID, "task": taskName, "course": courseName, "description": taskDescription};
+    var courseQuery = {"userID": userID, "courseName": courseName}; 
     var query = {"userID": userID, "task": taskName, "course": courseName}; 
-    db.collection('tasks').find(query).toArray(function(err, results){
-        if (err)
-            return res.send(err); 
-        else if (results)
-            if (results.length == 0){
-                var docToInsert = {"userID": userID, "course": courseName, "task": taskName, "description": taskDescription};
-                db.collection('tasks').insert(docToInsert, function(err1, results1){
-                    if (err1)
-                        return res.send(err1); 
-                    else{
-                        db.collection('tasks').findOne(taskQuery, function(err2, doc){
-                            if (err2)
-                                return res.send(err2); 
-                            else if (doc){
-//                                console.log(doc); 
-                                var newTaskRow = {"course": courseName, "task": doc.task, "description": doc.description}; 
-                                req.session.userInfo.tasks.push(newTaskRow);  
-                                return res.redirect('/home'); 
+    db.collection('courses').find(courseQuery).toArray(function(error, result){
+        if (error)
+            return res.send(error); 
+        else if (result.length == 1){
+            db.collection('tasks').find(query).toArray(function(err, results){
+                if (err)
+                    return res.send(err); 
+                else if (results)
+                    if (results.length == 0){
+                        var docToInsert = {"userID": userID, "course": courseName, "task": taskName, "description": taskDescription};
+                        db.collection('tasks').insert(docToInsert, function(err1, results1){
+                            if (err1)
+                                return res.send(err1); 
+                            else{
+                                db.collection('tasks').findOne(taskQuery, function(err2, doc){
+                                    if (err2)
+                                        return res.send(err2); 
+                                    else if (doc){
+        //                                console.log(doc); 
+                                        var newTaskRow = {"course": courseName, "task": doc.task, "description": doc.description}; 
+                                        req.session.userInfo.tasks.push(newTaskRow);  
+                                        return res.redirect('/home'); 
+                                    }
+                                }); 
                             }
-                        }); 
+                        });
                     }
-                });
-            }
-            else if (results.length == 1)
-                return res.send("this task already exists for the course!");
-            else 
-                return res.send("unknown error"); 
-    }); 
+                    else if (results.length == 1)
+                        return res.send("this task already exists for the course!");
+                    else 
+                        return res.send("unknown error"); 
+            });         
+        }
+        else if (result.length == 0)
+            return res.send("this course doesn't exists!"); 
+        else 
+            return res.send("unknown error"); 
     
+    
+    }); 
 });
 
 app.post('/api/login', (req, res) => {
@@ -279,7 +342,7 @@ app.get('/home', auth, function(req, res){
     res.json(req.session); 
 });
 
-app.get('/logout', auth, function (req, res) {
+app.post('/logout', auth, function (req, res) {
   req.session.destroy();
   res.redirect('/');
 });
