@@ -1,5 +1,6 @@
 var express = require('express');
 var app = express();
+var nunjucks = require('nunjucks');
 var port = process.env.PORT || 3000;
 var bodyParser = require('body-parser');
 var path = require("path");
@@ -21,6 +22,10 @@ app.use(session({
     secure: true,
     ephemeral: true
 }));
+nunjucks.configure('views', {
+  autoescape: true,
+  express   : app
+});
 
 /*
 ***************************************************************
@@ -68,7 +73,7 @@ app.post('/api/createAccount', (req, res) => {
     });
 });
 
-app.post('/api/removeCourse', auth, (req, res) =>{
+app.delete('/api/course', auth, (req, res) =>{
     var courseName = req.body.courseName; 
     var userID = ObjectID(req.session.userInfo.userID);
     var query = {"userID": userID, "courseName": courseName};
@@ -117,7 +122,7 @@ app.post('/api/removeCourse', auth, (req, res) =>{
         }
     }); 
 }); 
-app.post('/api/addCourse', auth, (req, res) => {
+app.post('/api/course', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var courseDescription = req.body.courseDescription; 
     var userID = ObjectID(req.session.userInfo.userID);
@@ -149,7 +154,7 @@ app.post('/api/addCourse', auth, (req, res) => {
     });
 });
 
-app.post('/api/updateCourse', auth, (req, res) => {
+app.put('/api/course', auth, (req, res) => {
     var oldCourseName = req.body.oldCourseName;
     var oldCourseDescription = req.body.oldCourseDescription; 
     var newCourseName = req.body.newCourseName; 
@@ -216,7 +221,7 @@ app.post('/api/updateCourse', auth, (req, res) => {
 
 });
 
-app.post('/api/removeTask', auth, (req, res) => {
+app.delete('/api/task', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var taskName = req.body.taskName; 
     var taskDescription = req.body.taskDescription; 
@@ -255,7 +260,7 @@ app.post('/api/removeTask', auth, (req, res) => {
     
     }); 
 }); 
-app.post('/api/updateTask', auth, (req, res) => {
+app.put('/api/task', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var oldTaskName = req.body.oldTaskName; 
     var newTaskName = req.body.newTaskName; 
@@ -315,7 +320,7 @@ app.post('/api/updateTask', auth, (req, res) => {
     
 });
 
-app.post('/api/addTask', auth, (req, res) => {
+app.post('/api/task', auth, (req, res) => {
     var courseName = req.body.courseName; 
     var taskName = req.body.taskName; 
     var taskDescription = req.body.taskDescription; 
@@ -396,7 +401,7 @@ app.post('/api/login', (req, res) => {
                                     req.session.userInfo.tasks.push(taskRow); 
                                 }
                                 req.session.admin = true; 
-                                return res.redirect('/home'); 
+                                return res.render('index.html', req.session.userInfo); 
                             }
                             
                         });    
