@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var nunjucks = require('nunjucks');
+var nunjucks = require('pug');
 var port = process.env.PORT || 3000;
 var bodyParser = require('body-parser');
 var path = require("path");
@@ -22,10 +22,9 @@ app.use(session({
     secure: true,
     ephemeral: true
 }));
-nunjucks.configure('views', {
-  autoescape: true,
-  express   : app
-});
+app.set('views', __dirname + '/views');
+app.set('view engine', 'pug');
+
 
 /*
 ***************************************************************
@@ -401,7 +400,7 @@ app.post('/api/login', (req, res) => {
                                     req.session.userInfo.tasks.push(taskRow); 
                                 }
                                 req.session.admin = true; 
-                                return res.render('index.html', req.session.userInfo); 
+                                return res.render('index', req.session.userInfo); 
                             }
                             
                         });    
