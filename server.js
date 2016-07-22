@@ -24,7 +24,7 @@ app.use(session({
 }));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
-
+app.use(express.static('static'));
 
 /*
 ***************************************************************
@@ -400,7 +400,7 @@ app.post('/api/login', (req, res) => {
                                     req.session.userInfo.tasks.push(taskRow); 
                                 }
                                 req.session.admin = true; 
-                                return res.render('index', req.session.userInfo); 
+                                return res.render('home', req.session.userInfo); 
                             }
                             
                         });    
@@ -419,7 +419,7 @@ app.post('/api/login', (req, res) => {
 
 
 app.get('/',function(req,res){
-  res.sendFile(path.join(__dirname+'/views/index.html'));
+  res.render('index'); 
   //__dirname : It will resolve to your project folder.
 });
 
