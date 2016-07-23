@@ -373,6 +373,7 @@ app.post('/api/login', (req, res) => {
     console.log("request came"); 
     var user = req.body.username; 
     var query = {"username": user};
+    var errorRes = {"error": "incorrect username/password"}; 
     db.collection('accounts').findOne({"username": user}).then(function(doc){
         if (doc){
             pwd = req.body.password;          
@@ -412,10 +413,10 @@ app.post('/api/login', (req, res) => {
                 });                   
             }
             else
-                return res.send("incorrect username/password"); 
+                return res.send(JSON.stringify(errorRes)); 
         }
         else
-            return res.send("account doesn't exist!"); 
+            return res.send(JSON.stringify(errorRes)); 
     });
 });
 

@@ -15,9 +15,12 @@ html(lang="en")
             h1 Course Planner
         br
         br
-        div(class="container", align="center")
+        div(class="container", align="center", id="mainDiv")
             button(type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal", style="margin-right: 30px") Login
             button(type="button" class="btn btn-success" data-toggle="modal" data-target="#createAccountModal") Create Account
+            div(class="alert alert-danger", align="center", id="error")
+                label(type="text", id="errorMessage")
+                
 
         <!-- Modal -->
         div(class="modal fade" id="loginModal" role="dialog")
@@ -57,7 +60,7 @@ html(lang="en")
                             div(class="form-group")
                                 label(for="pwd") Password:
                                 input(type="password", class="form-control", id="pwd")
-                            button(type="button", class="btn btn-default", id="createAccount") Submit              
+                            button(type="button", class="btn btn-default", id="createAccountButton") Create Account              
 
       
         
