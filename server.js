@@ -370,6 +370,7 @@ app.post('/api/task', auth, (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
+    console.log("request came"); 
     var user = req.body.username; 
     var query = {"username": user};
     db.collection('accounts').findOne({"username": user}).then(function(doc){
@@ -400,7 +401,8 @@ app.post('/api/login', (req, res) => {
                                     req.session.userInfo.tasks.push(taskRow); 
                                 }
                                 req.session.admin = true; 
-                                return res.render('home', req.session.userInfo); 
+                                res.contentType('json');
+                                return res.send(JSON.stringify(req.session.userInfo)); 
                             }
                             
                         });    

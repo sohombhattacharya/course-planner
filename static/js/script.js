@@ -1,12 +1,28 @@
 $(document).ready(function(){
     $("#loginButton").click(function(){
-        $.post("http://localhost:3000/api/login",
-        {
-          username: "sohom95",
-          password: "test123"
-        },
-        function(data,status){
-            alert("Data: " + data + "\nStatus: " + status);
-        });
+        var username = $("#username").val();
+        var pwd = $("#pwd").val(); 
+        console.log(username); 
+        console.log(pwd); 
+          $.ajax({
+            url: "/api/login",
+            type: "POST",
+            data: {username: username, password: pwd},
+            cache: false,
+            timeout: 5000,
+            complete: function() {
+              //called when complete
+              console.log('process complete');
+            },
+
+            success: function(data) {
+              console.log(data);
+              console.log('process sucess');
+           },
+
+            error: function() {
+              console.log('process error');
+            },
+          });        
     });
 });
