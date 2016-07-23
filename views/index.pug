@@ -16,18 +16,18 @@ html(lang="en")
         br
         br
         div(class="container", align="center")
-            button(type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal", style="margin-right: 30px") Login
-            button(type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal") Create Account
+            button(type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal", style="margin-right: 30px") Login
+            button(type="button" class="btn btn-success" data-toggle="modal" data-target="#createAccountModal") Create Account
 
         <!-- Modal -->
-        div(class="modal fade" id="myModal" role="dialog")
+        div(class="modal fade" id="loginModal" role="dialog")
             div(class="modal-dialog modal-lg")
     
                 <!-- Modal content-->
                 div(class="modal-content")
                     div(class="modal-header")
                         button(type="button" class="close" data-dismiss="modal") &times;
-                        h4(class="modal-title") Modal Header
+                        h4(class="modal-title") Login
                     div(class="modal-body")
                         form( class="form-inline" role="form")
                             div( class="form-group")
@@ -37,7 +37,27 @@ html(lang="en")
                                 label(for="pwd") Password:
                                 input(type="password", class="form-control", id="pwd")
                             button(type="button", class="btn btn-default", id="loginButton") Submit
-              
+        <!-- Modal -->
+        div(class="modal fade" id="createAccountModal" role="dialog")
+            div(class="modal-dialog modal-lg")
+    
+                <!-- Modal content-->
+                div(class="modal-content")
+                    div(class="modal-header")
+                        button(type="button" class="close" data-dismiss="modal") &times;
+                        h4(class="modal-title") Create an Account
+                    div(class="modal-body")
+                        form( class="form-inline" role="form")
+                            div( class="form-group")
+                                label(for="username") Username:
+                                input(type="text", class="form-control", id="username", style="margin-right: 10x")
+                            div( class="form-group")
+                                label(for="nickname") Nickname:
+                                input(type="text", class="form-control", id="nickname", style="margin-right: 10x")                                
+                            div(class="form-group")
+                                label(for="pwd") Password:
+                                input(type="password", class="form-control", id="pwd")
+                            button(type="button", class="btn btn-default", id="createAccount") Submit              
 
       
         

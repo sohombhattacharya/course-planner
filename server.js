@@ -426,7 +426,7 @@ app.get('/',function(req,res){
 });
 
 app.get('/home', auth, function(req, res){
-    res.json(req.session); 
+    res.render('home', req.session.userInfo); 
 });
 
 app.get('/api/logout', auth, function (req, res) {

@@ -12,16 +12,18 @@ $(document).ready(function(){
             timeout: 5000,
             complete: function() {
               //called when complete
-              console.log('process complete');
+              console.log('POST complete');
             },
 
             success: function(data) {
               console.log(data);
               console.log('process sucess');
+                window.location.replace("/home");
+            
            },
 
             error: function() {
-              console.log('process error');
+              console.log('POST error');
             },
           });        
     });
