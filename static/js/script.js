@@ -23,7 +23,7 @@ $(document).ready(function(){
             },
             success: function(data) {
                 console.log('process sucsess');
-                if (data.nickname && data.username && data.userID && data.courses && data.tasks)
+                if (data.nickname && data.username && data.userID && data.courses)
                     window.location.replace("/home");
                 else
                     $("#errorMessageLogin").text(data.error);     
@@ -53,7 +53,7 @@ $(document).ready(function(){
             },
             success: function(data) {
                 console.log('process success');
-                if (data.nickname && data.username && data.userID && data.courses && data.tasks)
+                if (data.nickname && data.username && data.userID && data.courses)
                     window.location.replace("/home");
                 else
                     $("#errorMessageCreateAccount").text(data.error);     

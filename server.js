@@ -60,7 +60,7 @@ app.post('/api/createAccount', (req, res) => {
                     return res.send(err); // SET A STANDARD SESSION - ERROR VARIABLE THAT HOLDS THIS ERROR
                 }
                 var userID = results["ops"][0]["_id"]; 
-                req.session.userInfo = {"userID": userID, "username": user, "nickname": nickname, "courses": [], "tasks": []}; 
+                req.session.userInfo = {"userID": userID, "username": user, "nickname": nickname, "courses": []}; 
                 req.session.admin = true; 
                 return res.send(req.session.userInfo);
             });      
@@ -111,7 +111,7 @@ app.delete('/api/course', auth, (req, res) =>{
                                     }
                                 }
                                 req.session.userInfo.tasks = tasksList; 
-                                return res.redirect('/home'); 
+                                return res.send(req.session.userInfo); 
                             }
                             
                         }); 
@@ -144,9 +144,9 @@ app.post('/api/course', auth, (req, res) => {
                         if (err2)
                             return res.send(err2); 
                         else{
-                            var courseRow = {"course": results2.courseName, "description": results2.courseDescription};
+                            var courseRow = {"course": results2.courseName, "description": results2.courseDescription, "tasks": []};
                             req.session.userInfo.courses.push(courseRow); 
-                            return res.redirect('/home'); 
+                            return res.send(req.session.userInfo); 
                         }
                     });
                 }
@@ -186,10 +186,14 @@ app.put('/api/course', auth, (req, res) => {
                                         var tasksList = req.session.userInfo.tasks; 
                                         var newCourseRow = {"course": doc1.courseName, "description": doc1.courseDescription};
                                         // WANT TO FIND A BETTER WAY TO FIND INDEX OF WITHOUT FOR LOOP
-                                        for (i = 0; i < coursesList.length; i++){
-                                            if (coursesList[i].course == oldCourseName)
-                                                coursesList[i] = newCourseRow;
-                                        }
+//                                        for (i = 0; i < coursesList.length; i++){
+//                                            if (coursesList[i].course == oldCourseName)
+//                                                coursesList[i] = newCourseRow;
+//                                        }
+                                        var courseObj = (coursesList).filter(function( obj ) {
+                                            return obj.course == oldCourseName;
+                                        });                                         
+                                        courseObj[0] = newCourseRow; 
                                         req.session.userInfo.courses = coursesList; 
                                         var taskQuery = {"userID": userID, "course": oldCourseName};
                                         var taskData = {"$set": {"course": newCourseName}};
@@ -198,12 +202,16 @@ app.put('/api/course', auth, (req, res) => {
                                                 return res.send(err2); 
                                             
                                             else if (results){
-                                                for (i = 0; i < tasksList.length; i++){
-                                                    if (tasksList[i].course == oldCourseName)
-                                                        tasksList[i].course = newCourseName; 
-                                                }
+//                                                for (i = 0; i < tasksList.length; i++){
+//                                                    if (tasksList[i].course == oldCourseName)
+//                                                        tasksList[i].course = newCourseName; 
+//                                                }
+                                                var taskObj = (tasksList).filter(function( obj ) {
+                                                    return obj.course == oldCourseName;
+                                                });                                   
+                                                taskObj[0].course = newCourseName; 
                                                 req.session.userInfo.tasks = tasksList; 
-                                                return res.redirect('/home');                                
+                                                return res.send(req.session.userInfo); 
                                             }
                                         });
                                     }
@@ -243,15 +251,22 @@ app.delete('/api/task', auth, (req, res) => {
                         return res.send(err1)
                     else if (results1){
                         console.log(results1); 
-                        var tasksList = req.session.userInfo.tasks; 
-                        for (i = 0; i < tasksList.length; i++){
-                            if (tasksList[i].task == taskName && tasksList[i].course == courseName && tasksList[i].description == taskDescription){
-                                console.log(i); 
-                                tasksList.splice(i, 1); 
-                                break; 
-                            }
-                        }
-                        return res.redirect('/home');                         
+                        var courseObj = (req.session.userInfo.courses).filter(function( obj ) {
+                            return obj.course == courseName;
+                        });                         
+                        var tasksList = courseObj[0].tasks; 
+//                        for (i = 0; i < tasksList.length; i++){
+//                            if (tasksList[i].task == taskName && tasksList[i].course == courseName && tasksList[i].description == taskDescription){
+//                                console.log(i); 
+//                                tasksList.splice(i, 1); 
+//                                break; 
+//                            }
+//                        }
+                        var taskObj = (tasksList).filter(function( obj ) {
+                            return (obj.task == taskName && obj.course == courseName && obj.description == taskDescription);
+                        });
+                        tasksList.splice(tasksList.indexOf(taskObj[0]), 1); 
+                        return res.send(req.session.userInfo); 
                     }
                 }); 
             }
@@ -290,14 +305,23 @@ app.put('/api/task', auth, (req, res) => {
                                         if (err3)
                                             return res.send(err3); 
                                         else if (doc){
-                                            var tasksList = req.session.userInfo.tasks; 
-                                            for (i = 0; i < tasksList.length; i++){
-                                                if (tasksList[i].task == oldTaskName && tasksList[i].course == courseName){
-                                                    tasksList[i].task = doc.task; 
-                                                    tasksList[i].description = doc.description;
-                                                }
-                                            }
-                                            return res.redirect('/home'); 
+                                            var courseObj = (req.session.userInfo.courses).filter(function( obj ) {
+                                              return obj.course == courseName;
+                                            });                                  
+                                            
+                                            var tasksList = courseObj[0].tasks; 
+//                                            for (i = 0; i < tasksList.length; i++){
+//                                                if (tasksList[i].task == oldTaskName && tasksList[i].course == courseName){
+//                                                    tasksList[i].task = doc.task; 
+//                                                    tasksList[i].description = doc.description;
+//                                                }
+//                                            }
+                                            var taskObj = (tasksList).filter(function( obj ) {
+                                              return (obj.task == oldTaskName && obj.course == courseName);
+                                            }); 
+                                            taskObj[0].task = doc.task; 
+                                            taskObj[0].description = doc.description; 
+                                            return res.send(req.session.userInfo); 
                                         }
                                     }); 
                                 }    
@@ -350,9 +374,12 @@ app.post('/api/task', auth, (req, res) => {
                                         return res.send(err2); 
                                     else if (doc){
         //                                console.log(doc); 
-                                        var newTaskRow = {"course": courseName, "task": doc.task, "description": doc.description}; 
-                                        req.session.userInfo.tasks.push(newTaskRow);  
-                                        return res.redirect('/home'); 
+                                        var newTaskRow = {"task": doc.task, "description": doc.description}; 
+                                        var courseObj = (req.session.userInfo.courses).filter(function( obj ) {
+                                          return obj.course == courseName;
+                                        });                                            
+                                        courseObj[0].tasks.push(newTaskRow);  
+                                        return res.send(req.session.userInfo); 
                                     }
                                 }); 
                             }
@@ -387,14 +414,14 @@ app.post('/api/login', (req, res) => {
 //                console.log("correct pass"); 
                 var userID = doc._id; 
                 var query = {"userID": ObjectID(userID)};
-                req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname, "courses": [], "tasks": []};
+                req.session.userInfo = {"userID": userID, "username": doc.username, "nickname": doc.nickname, "courses": []};
                 
                 db.collection('courses').find(query).toArray(function(err, results){
                     if (err)
                         return res.send(err);
                     else if (results){
                         for (i = 0; i < results.length; i++){
-                            var courseRow = {"course": results[i].courseName, "description": results[i].courseDescription};
+                            var courseRow = {"course": results[i].courseName, "description": results[i].courseDescription, "tasks": []};
                             req.session.userInfo.courses.push(courseRow); 
                         }
                         db.collection('tasks').find(query).toArray(function(err1, results1){
@@ -402,8 +429,13 @@ app.post('/api/login', (req, res) => {
                                 return res.send(err1); 
                             else if (results1){
                                 for (i = 0; i < results1.length; i++){
-                                    var taskRow = {"course": results1[i].course, "task": results1[i].task, "description": results1[i].description};
-                                    req.session.userInfo.tasks.push(taskRow); 
+                                    var taskRow = {"task": results1[i].task, "description": results1[i].description};
+                                    var courseObj = (req.session.userInfo.courses).filter(function( obj ) {
+                                      return obj.course == results1[i].course;
+                                    });         
+                                    console.log(courseObj); 
+                                    if (courseObj)
+                                        courseObj[0].tasks.push(taskRow);
                                 }
                                 req.session.admin = true; 
                                 res.contentType('json');
