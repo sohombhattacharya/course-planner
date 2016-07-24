@@ -46,8 +46,9 @@ MongoClient.connect(mongoURL, (err, database) => {
 });
 
 app.post('/api/createAccount', (req, res) => {
-    user = req.body.username; 
+    var user = req.body.username; 
     var obj = {"username": user};
+    var errorRes = {"error": ""}; 
     db.collection('accounts').find(obj).count().then(function(count) {
         if (count == 0){
             pwd = req.body.password;  
@@ -61,14 +62,17 @@ app.post('/api/createAccount', (req, res) => {
                 var userID = results["ops"][0]["_id"]; 
                 req.session.userInfo = {"userID": userID, "username": user, "nickname": nickname, "courses": [], "tasks": []}; 
                 req.session.admin = true; 
-                return res.redirect('/home');
+                return res.send(req.session.userInfo);
             });      
         }
         else if (count > 0){
-            res.send("username already exists"); 
+            errorRes.error = "Username already exists! Please try creating an account with a different username."; 
+            res.send(errorRes); 
         }
-        else
-            res.send("unknown error"); 
+        else{
+            errorRes.error = "Multiple accounts with different usernames, server/db error. Please try creating an account with different username."
+            res.send(errorRes); 
+        }
     });
 });
 
@@ -403,7 +407,7 @@ app.post('/api/login', (req, res) => {
                                 }
                                 req.session.admin = true; 
                                 res.contentType('json');
-                                return res.send(JSON.stringify(req.session.userInfo)); 
+                                return res.send(req.session.userInfo); 
                             }
                             
                         });    
@@ -413,16 +417,16 @@ app.post('/api/login', (req, res) => {
                 });                   
             }
             else
-                return res.send(JSON.stringify(errorRes)); 
+                return res.send(errorRes); 
         }
         else
-            return res.send(JSON.stringify(errorRes)); 
+            return res.send(errorRes); 
     });
 });
 
 
 app.get('/',function(req,res){
-  res.render('index'); 
+    res.render('index'); 
   //__dirname : It will resolve to your project folder.
 });
 

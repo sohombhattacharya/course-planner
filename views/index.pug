@@ -18,14 +18,10 @@ html(lang="en")
         div(class="container", align="center", id="mainDiv")
             button(type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal", style="margin-right: 30px") Login
             button(type="button" class="btn btn-success" data-toggle="modal" data-target="#createAccountModal") Create Account
-            div(class="alert alert-danger", align="center", id="error")
-                label(type="text", id="errorMessage")
-                
 
         <!-- Modal -->
         div(class="modal fade" id="loginModal" role="dialog")
             div(class="modal-dialog modal-lg")
-    
                 <!-- Modal content-->
                 div(class="modal-content")
                     div(class="modal-header")
@@ -35,15 +31,15 @@ html(lang="en")
                         form( class="form-inline" role="form")
                             div( class="form-group")
                                 label(for="username") Username:
-                                input(type="text", class="form-control", id="username", style="margin-right: 10x")
+                                input(type="text", class="form-control", id="usernameLogin", style="margin-right: 10x")
                             div(class="form-group")
                                 label(for="pwd") Password:
-                                input(type="password", class="form-control", id="pwd")
+                                input(type="password", class="form-control", id="pwdLogin")
                             button(type="button", class="btn btn-default", id="loginButton") Submit
+                        p(class="modal-login-error", type="text", id="errorMessageLogin") 
         <!-- Modal -->
         div(class="modal fade" id="createAccountModal" role="dialog")
             div(class="modal-dialog modal-lg")
-    
                 <!-- Modal content-->
                 div(class="modal-content")
                     div(class="modal-header")
@@ -53,14 +49,15 @@ html(lang="en")
                         form( class="form-inline" role="form")
                             div( class="form-group")
                                 label(for="username") Username:
-                                input(type="text", class="form-control", id="username", style="margin-right: 10x")
+                                input(type="text", class="form-control", id="usernameCreate", style="margin-right: 10x")
                             div( class="form-group")
                                 label(for="nickname") Nickname:
-                                input(type="text", class="form-control", id="nickname", style="margin-right: 10x")                                
+                                input(type="text", class="form-control", id="nicknameCreate", style="margin-right: 10x")                                
                             div(class="form-group")
                                 label(for="pwd") Password:
-                                input(type="password", class="form-control", id="pwd")
+                                input(type="password", class="form-control", id="pwdCreate")
                             button(type="button", class="btn btn-default", id="createAccountButton") Create Account              
+                        p(class="modal-create-account-error", type="text", id="errorMessageCreateAccount") 
 
       
         

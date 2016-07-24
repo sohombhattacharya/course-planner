@@ -1,8 +1,15 @@
 $(document).ready(function(){
-    ("#error").hide(); 
+    
+    $(".modal").on("hidden.bs.modal", function(){
+        $(".modal-login-error").html("");
+        $(".modal-create-account-error").html("");
+        
+    });
+    
     $("#loginButton").click(function(){
-        var username = $("#username").val();
-        var pwd = $("#pwd").val(); 
+        $("#errorMessageLogin").text(""); 
+        var username = $("#usernameLogin").val();
+        var pwd = $("#pwdLogin").val(); 
         console.log(username); 
         console.log(pwd); 
           $.ajax({
@@ -12,53 +19,47 @@ $(document).ready(function(){
             cache: false,
             timeout: 5000,
             complete: function() {
-              //called when complete
               console.log('POST complete');
             },
-
             success: function(data) {
-                console.log(data);
-                console.log('process sucess');
+                console.log('process sucsess');
                 if (data.nickname && data.username && data.userID && data.courses && data.tasks)
                     window.location.replace("/home");
-                else if (data.error){
-                    //NEED TO FINISH ERROR HANDLING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                }
-           },
-
+                else
+                    $("#errorMessageLogin").text(data.error);     
+            },
             error: function() {
-              console.log('POST error');
+                $("#errorMessageLogin").text("login call to server resulted in error, please try again");                 
             },
           });        
     });
     
     $("#createAccountButton").click(function(){
-        var username = $("#username").val();
-        var pwd = $("#pwd").val(); 
-        var nickname = $("#nickname").val(); 
-        console.log(nickname); 
+        $("#errorMessageCreateAccount").text(""); 
+        var username = $("#usernameCreate").val();
+        var pwd = $("#pwdCreate").val();
+        var nickname = $("#nicknameCreate").val(); 
         console.log(username); 
         console.log(pwd); 
+        console.log(nickname); 
           $.ajax({
-            url: "/api/login",
+            url: "/api/createAccount",
             type: "POST",
-            data: {username: username, password: pwd},
+            data: {username: username, password: pwd, nickname: nickname},
             cache: false,
             timeout: 5000,
             complete: function() {
-              //called when complete
               console.log('POST complete');
             },
-
             success: function(data) {
-              console.log(data);
-              console.log('process sucess');
-                window.location.replace("/home");
-            
-           },
-
+                console.log('process success');
+                if (data.nickname && data.username && data.userID && data.courses && data.tasks)
+                    window.location.replace("/home");
+                else
+                    $("#errorMessageCreateAccount").text(data.error);     
+            },
             error: function() {
-              console.log('POST error');
+                $("#errorMessageCreateAccount").text("create-account call to server resulted in error, please try again");                 
             },
           });        
     });    
