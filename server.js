@@ -102,15 +102,15 @@ app.delete('/api/course', auth, (req, res) =>{
                             if (err2)
                                 return res.send(err2); 
                             else if (results2){
-                                console.log(results2); 
-                                var tasksList = req.session.userInfo.tasks; 
-                                for (i = 0; i < tasksList.length; i++){
-                                    if (tasksList[i].course == courseName){
-                                        tasksList.splice(i, 1); 
-                                        break; 
-                                    }
-                                }
-                                req.session.userInfo.tasks = tasksList; 
+//                                console.log(results2); 
+//                                var tasksList = req.session.userInfo.tasks; 
+//                                for (i = 0; i < tasksList.length; i++){
+//                                    if (tasksList[i].course == courseName){
+//                                        tasksList.splice(i, 1); 
+//                                        break; 
+//                                    }
+//                                }
+//                                req.session.userInfo.tasks = tasksList; 
                                 return res.send(req.session.userInfo); 
                             }
                             
@@ -310,6 +310,7 @@ app.put('/api/task', auth, (req, res) => {
                                             });                                  
                                             
                                             var tasksList = courseObj[0].tasks; 
+                                            console.log(tasksList); 
 //                                            for (i = 0; i < tasksList.length; i++){
 //                                                if (tasksList[i].task == oldTaskName && tasksList[i].course == courseName){
 //                                                    tasksList[i].task = doc.task; 
@@ -317,8 +318,9 @@ app.put('/api/task', auth, (req, res) => {
 //                                                }
 //                                            }
                                             var taskObj = (tasksList).filter(function( obj ) {
-                                              return (obj.task == oldTaskName && obj.course == courseName);
+                                              return (obj.task == oldTaskName);
                                             }); 
+                                            console.log(taskObj); 
                                             taskObj[0].task = doc.task; 
                                             taskObj[0].description = doc.description; 
                                             return res.send(req.session.userInfo); 
@@ -401,7 +403,7 @@ app.post('/api/task', auth, (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-    console.log("request came"); 
+//    console.log("request came"); 
     var user = req.body.username; 
     var query = {"username": user};
     var errorRes = {"error": "incorrect username/password"}; 
@@ -433,7 +435,7 @@ app.post('/api/login', (req, res) => {
                                     var courseObj = (req.session.userInfo.courses).filter(function( obj ) {
                                       return obj.course == results1[i].course;
                                     });         
-                                    console.log(courseObj); 
+//                                    console.log(courseObj); 
                                     if (courseObj)
                                         courseObj[0].tasks.push(taskRow);
                                 }
