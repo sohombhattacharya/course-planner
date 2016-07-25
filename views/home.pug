@@ -4,9 +4,15 @@ html(lang="en")
     meta( charset='utf-8' )
     title= Welcome
   body
-    h1 Whats up !{nickname}
-    ul
-        each c in courses
-            div(id= c.course)
-                p= c.course
-                p= c.description
+  
+  h1 Whats up !{nickname}
+  ul      
+    each c in courses
+        div(id= c.course)
+            li !{c.course}
+            li !{c.description}
+            ul
+                each task in c.tasks
+                    div(id= task.task)
+                        li !{task.task}
+                        li !{task.description}
