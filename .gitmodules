@@ -1,3 +1,6 @@
 [submodule "subModuleGitRepo/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio"]
 	path = subModuleGitRepo/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio
 	url = https://github.com/sohombhattacharya/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio.git
+[submodule "submodules/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio"]
+	path = submodules/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio
+	url = https://github.com/sohombhattacharya/Minimum-Margin-Calculator-for-Hedge-Fund-Portfolio.git
