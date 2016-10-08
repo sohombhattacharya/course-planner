@@ -26,6 +26,13 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 app.use(express.static('static'));
 
+
+
+
+
+
+
+
 /*
 ***************************************************************
 NEED TO MAKE BETTER AUTH******
@@ -468,7 +475,7 @@ app.get('/home', auth, function(req, res){
     res.render('home', req.session.userInfo); 
 });
 
-app.get('/api/logout', auth, function (req, res) {
+app.get('/api/logout',  auth, function (req, res) {
   req.session.destroy();
   res.redirect('/');
 });
